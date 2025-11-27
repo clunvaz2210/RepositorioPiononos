@@ -16,6 +16,11 @@ public class Main {
 
     static public void realizarConexion() {
         try {
+            try {
+                Class.forName("org.postgresql.Driver");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
             conexion = DriverManager.getConnection(url,user,password);
             System.out.println("Conexión realizada");
         } catch (SQLException e) {
@@ -39,7 +44,6 @@ public class Main {
         DriverManager.drivers().forEach(driver -> System.out.println(driver.toString()));
         realizarConexion();
         cerrarConexion();
-        //Hacemos un objeto service como en acceso a datos
         PastelService service = new PastelService();
         Scanner scanner = new Scanner(System.in);
 
