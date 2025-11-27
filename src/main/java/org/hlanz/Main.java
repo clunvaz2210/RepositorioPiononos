@@ -2,10 +2,43 @@ package org.hlanz;
 
 import org.hlanz.servlets.PastelService;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Scanner;
 
 public class Main {
-    void main(){
+
+    private static Connection conexion = null;
+    private static final String url = "jdbc:postgresql://localhost:5433/Piononos";
+    private static final String user = "postgres";
+    private static final String password = "admin";
+
+    static public void realizarConexion() {
+        try {
+            conexion = DriverManager.getConnection(url,user,password);
+            System.out.println("Conexión realizada");
+        } catch (SQLException e) {
+            System.out.println("No se conecto la bbdd " + e.getMessage());
+        }
+    }
+
+    static public void cerrarConexion(){
+        if(conexion!=null){
+            try {
+                conexion.close();
+                System.out.println("Conexión cerrada");
+            }catch (SQLException e){
+                System.out.println("Error al cerrar conexion");
+            }
+        }
+    }
+
+    public static void main(String[] args){
+
+        DriverManager.drivers().forEach(driver -> System.out.println(driver.toString()));
+        realizarConexion();
+        cerrarConexion();
         //Hacemos un objeto service como en acceso a datos
         PastelService service = new PastelService();
         Scanner scanner = new Scanner(System.in);
@@ -96,10 +129,12 @@ public class Main {
                     System.out.println("❌ Opción inválida. Intenta de nuevo.\n");
             }
         }//fin while
+
     }// fin Main
 
+
     // Método auxiliar para formatear JSON (indentación simple)
-    private String formatJson(String json) {
+    private static String formatJson(String json) {
         StringBuilder formatted = new StringBuilder();
         int indentLevel = 0;
         boolean inString = false;
