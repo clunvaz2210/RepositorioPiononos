@@ -2,10 +2,8 @@ package org.hlanz;
 
 import org.hlanz.servlets.PastelService;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Scanner;
+import java.sql.*;
+
 
 public class Main {
 
@@ -21,157 +19,159 @@ public class Main {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-            conexion = DriverManager.getConnection(url,user,password);
+            conexion = DriverManager.getConnection(url, user, password);
             System.out.println("Conexión realizada");
         } catch (SQLException e) {
-            System.out.println("No se conecto la bbdd " + e.getMessage());
+            System.out.println("No se conectó la bbdd " + e.getMessage());
         }
     }
 
-    static public void cerrarConexion(){
-        if(conexion!=null){
+    static public void cerrarConexion() {
+        if (conexion != null) {
             try {
                 conexion.close();
                 System.out.println("Conexión cerrada");
-            }catch (SQLException e){
-                System.out.println("Error al cerrar conexion");
+            } catch (SQLException e) {
+                System.out.println("Error al cerrar conexión");
             }
         }
     }
 
-    public static void main(String[] args){
+    public static void insertarPastel(String nombre, String sabor, double precio, int porciones) {
+        String sql = "INSERT INTO pasteles(nombre, sabor, precio, porciones) VALUES (?, ?, ?, ?)";
+        PreparedStatement consultaInsert = null;
 
-        DriverManager.drivers().forEach(driver -> System.out.println(driver.toString()));
-        realizarConexion();
-        cerrarConexion();
-        PastelService service = new PastelService();
-        Scanner scanner = new Scanner(System.in);
+        try {
+            consultaInsert = conexion.prepareStatement(sql);
+            consultaInsert.setString(1, nombre);
+            consultaInsert.setString(2, sabor);
+            consultaInsert.setDouble(3, precio);
+            consultaInsert.setInt(4, porciones);
 
-        System.out.println("||||||||||||API REST DE PASTELES - PRUEBA SIN SERVIDOR ||||||||||||\n");
-
-        /*
-        Vamos a simular las peticiones HTTP que le hariamos a un servidor web
-
-        Lo siguiente seria hacer esto con servlets
-        (clase de Java que se ejecuta en un servidor web)
-         */
-        while (true) {
-            int opcion = Integer.parseInt(scanner.nextLine());
-            System.out.println();
-
-            switch (opcion) {
-                case 1:
-                    // 1. GET - Obtener todos los pasteles
-                    System.out.println("1. GET /api/pasteles - Obtener todos los pasteles:");
-                    System.out.println(formatJson(service.obtenerTodos()));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 2:
-                    // 2. GET - Obtener un pastel específico (ID 2)
-                    System.out.println("2. GET /api/pasteles/2 - Obtener pastel con ID 2:");
-                    System.out.println(formatJson(service.obtenerPorId(2L)));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 3:
-                    // 3. POST - Crear un nuevo pastel
-                    System.out.println("3. POST /api/pasteles - Crear nuevo pastel:");
-                    String nuevoPastelJson = "{\"nombre\":\"Cheesecake\",\"sabor\":\"Frutos rojos\",\"precio\":32.50,\"porciones\":16}";
-                    System.out.println("Body enviado: " + formatJson(nuevoPastelJson));
-                    String respuestaCrear = service.crear(nuevoPastelJson);
-                    System.out.println("Respuesta: " + formatJson(respuestaCrear));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 4:
-                    // 4. GET - Verificar que se creó (igual que opcion 1)
-                    System.out.println("4. GET /api/pasteles - Verificar todos los pasteles:");
-                    System.out.println(formatJson(service.obtenerTodos()));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 5:
-                    // 5. PUT - Actualizar el pastel con ID 1
-                    System.out.println("5. PUT /api/pasteles/1 - Actualizar pastel con ID 1:");
-                    String actualizarJson = "{\"nombre\":\"Tres Leches Premium\",\"sabor\":\"Vainilla Extra\",\"precio\":35.00,\"porciones\":15}";
-                    System.out.println("Body enviado: " + formatJson(actualizarJson));
-                    String respuestaActualizar = service.actualizar(1L, actualizarJson);
-                    System.out.println("Respuesta: " + formatJson(respuestaActualizar));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 6:
-                    // 6. GET - Verificar actualización
-                    System.out.println("6. GET /api/pasteles/1 - Verificar actualización:");
-                    System.out.println(formatJson(service.obtenerPorId(1L)));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 7:
-                    // 7. DELETE - Eliminar el pastel con ID 3
-                    System.out.println("7. DELETE /api/pasteles/3 - Eliminar pastel con ID 3:");
-                    String respuestaEliminar = service.eliminar(3L);
-                    System.out.println("Respuesta: " + formatJson(respuestaEliminar));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 8:
-                    // 8. GET - Verificar eliminación (igual que opcion 1)
-                    System.out.println("8. GET /api/pasteles - Verificar que se eliminó:");
-                    System.out.println(formatJson(service.obtenerTodos()));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 9:
-                    // 9. GET - Intentar obtener pastel eliminado
-                    System.out.println("9. GET /api/pasteles/3 - Intentar obtener pastel eliminado:");
-                    System.out.println(formatJson(service.obtenerPorId(3L)));
-                    System.out.println("\n" + "=".repeat(60) + "\n");
-                    break;
-                case 10:
-                    // 10. POST - Crear con datos inválidos
-                    System.out.println("10. POST /api/pasteles - Crear con datos inválidos:");
-                    String jsonInvalido = "{\"nombre\":\"Pastel sin datos}";
-                    System.out.println("Body enviado: " + jsonInvalido);
-                    String respuestaError = service.crear(jsonInvalido);
-                    System.out.println("Respuesta: " + formatJson(respuestaError));
-                    break;
-                default:
-                    System.out.println("❌ Opción inválida. Intenta de nuevo.\n");
-            }
-        }//fin while
-
-    }// fin Main
-
-
-    // Método auxiliar para formatear JSON (indentación simple)
-    private static String formatJson(String json) {
-        StringBuilder formatted = new StringBuilder();
-        int indentLevel = 0;
-        boolean inString = false;
-
-        for (int i = 0; i < json.length(); i++) {
-            char c = json.charAt(i);
-
-            if (c == '"' && (i == 0 || json.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            }
-
-            if (!inString) {
-                if (c == '{' || c == '[') {
-                    formatted.append(c).append('\n');
-                    indentLevel++;
-                    formatted.append("  ".repeat(indentLevel));
-                } else if (c == '}' || c == ']') {
-                    formatted.append('\n');
-                    indentLevel--;
-                    formatted.append("  ".repeat(indentLevel));
-                    formatted.append(c);
-                } else if (c == ',') {
-                    formatted.append(c).append('\n');
-                    formatted.append("  ".repeat(indentLevel));
-                } else if (c == ':') {
-                    formatted.append(c).append(' ');
-                } else if (c != ' ') {
-                    formatted.append(c);
+            int filasAfectadas = consultaInsert.executeUpdate();
+            System.out.println("Se han insertado " + filasAfectadas + " filas");
+            System.out.println("Pastel '" + nombre + "' insertado correctamente");
+        } catch (SQLException e) {
+            System.out.println("Error al insertar pastel: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (consultaInsert != null) {
+                try {
+                    consultaInsert.close();
+                } catch (SQLException e) {
+                    System.out.println("Error cerrando el PreparedStatement: " + e.getMessage());
                 }
-            } else {
-                formatted.append(c);
             }
         }
-        return formatted.toString();
-    }//Fin metodo auxiliar
-}//fin clase
+    }
+
+    public static void seleccionarPasteles() {
+        String sql = "SELECT * FROM pasteles";
+        Statement consulta = null;
+        ResultSet resultado = null;
+
+        try {
+            consulta = conexion.createStatement();
+            resultado = consulta.executeQuery(sql);
+
+            System.out.println("\n=== LISTADO DE PASTELES ===");
+            while (resultado.next()) {
+                int id = resultado.getInt("id");
+                String nombre = resultado.getString("nombre");
+                String sabor = resultado.getString("sabor");
+                double precio = resultado.getDouble("precio");
+                int porciones = resultado.getInt("porciones");
+
+                System.out.println("ID: " + id + " | PASTEL: " + nombre +
+                        " | SABOR: " + sabor +
+                        " | PRECIO: $" + precio +
+                        " | PORCIONES: " + porciones);
+            }
+            System.out.println("===========================\n");
+        } catch (SQLException e) {
+            System.out.println("Error al seleccionar pasteles: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (resultado != null) resultado.close();
+                if (consulta != null) consulta.close();
+            } catch (SQLException e) {
+                System.out.println("Error cerrando recursos: " + e.getMessage());
+            }
+        }
+    }
+
+    public static void eliminarPastel(int id) {
+        String sql = "DELETE FROM pasteles WHERE id = ?";
+        PreparedStatement consultaDelete = null;
+
+        try {
+            consultaDelete = conexion.prepareStatement(sql);
+            consultaDelete.setInt(1, id);
+
+            int filasAfectadas = consultaDelete.executeUpdate();
+            if (filasAfectadas > 0) {
+                System.out.println("Pastel con ID " + id + " eliminado correctamente. Filas afectadas: " + filasAfectadas);
+            } else {
+                System.out.println("No se encontró ningún pastel con ID " + id + ".");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al eliminar pastel: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (consultaDelete != null) {
+                try {
+                    consultaDelete.close();
+                } catch (SQLException e) {
+                    System.out.println("Error cerrando el PreparedStatement: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    public static void actualizarPastel(int id, String nombre, String sabor, double precio, int porciones) {
+        String sql = "UPDATE pasteles SET nombre = ?, sabor = ?, precio = ?, porciones = ? WHERE id = ?";
+        PreparedStatement consultaUpdate = null;
+
+        try {
+            consultaUpdate = conexion.prepareStatement(sql);
+            consultaUpdate.setString(1, nombre);
+            consultaUpdate.setString(2, sabor);
+            consultaUpdate.setDouble(3, precio);
+            consultaUpdate.setInt(4, porciones);
+            consultaUpdate.setInt(5, id);
+
+            int filasAfectadas = consultaUpdate.executeUpdate();
+            if (filasAfectadas > 0) {
+                System.out.println("Pastel con ID " + id + " actualizado correctamente. Filas afectadas: " + filasAfectadas);
+            } else {
+                System.out.println("No se encontró ningún pastel con ID " + id + ".");
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al actualizar pastel: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (consultaUpdate != null) {
+                try {
+                    consultaUpdate.close();
+                } catch (SQLException e) {
+                    System.out.println("Error cerrando el PreparedStatement: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        realizarConexion();
+
+        insertarPastel("Tres Leches", "Vainilla", 25.50, 12);
+
+        seleccionarPasteles();
+
+        // actualizarPastel(1, "Tres Leches Premium", "Vainilla Extra", 30.00, 12);
+
+        // eliminarPastel(3);
+
+        cerrarConexion();
+    }
+}
