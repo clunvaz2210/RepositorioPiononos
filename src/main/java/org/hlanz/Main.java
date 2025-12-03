@@ -1,28 +1,23 @@
 package org.hlanz;
 
-import org.hlanz.servlets.PastelService;
-
 import java.sql.*;
-
 
 public class Main {
 
     private static Connection conexion = null;
-    private static final String url = "jdbc:postgresql://localhost:5433/Piononos";
+    private static final String url = "jdbc:postgresql://localhost:5433/Piononos"; // Ajusta el puerto si es necesario
     private static final String user = "postgres";
     private static final String password = "admin";
 
     static public void realizarConexion() {
         try {
-            try {
-                Class.forName("org.postgresql.Driver");
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+            Class.forName("org.postgresql.Driver");
             conexion = DriverManager.getConnection(url, user, password);
             System.out.println("Conexión realizada");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Driver no encontrado: " + e.getMessage());
         } catch (SQLException e) {
-            System.out.println("No se conectó la bbdd " + e.getMessage());
+            System.out.println("No se conectó la BBDD: " + e.getMessage());
         }
     }
 
@@ -32,7 +27,7 @@ public class Main {
                 conexion.close();
                 System.out.println("Conexión cerrada");
             } catch (SQLException e) {
-                System.out.println("Error al cerrar conexión");
+                System.out.println("Error al cerrar la conexión: " + e.getMessage());
             }
         }
     }
@@ -42,7 +37,7 @@ public class Main {
         PreparedStatement consultaInsert = null;
 
         try {
-            consultaInsert = conexion.prepareStatement(sql);
+            consultaInsert = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             consultaInsert.setString(1, nombre);
             consultaInsert.setString(2, sabor);
             consultaInsert.setDouble(3, precio);
@@ -50,7 +45,14 @@ public class Main {
 
             int filasAfectadas = consultaInsert.executeUpdate();
             System.out.println("Se han insertado " + filasAfectadas + " filas");
-            System.out.println("Pastel '" + nombre + "' insertado correctamente");
+
+            // Obtener el ID generado automáticamente
+            ResultSet generatedKeys = consultaInsert.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                int idGenerado = generatedKeys.getInt(1);
+                System.out.println("Pastel insertado con ID: " + idGenerado);
+            }
+
         } catch (SQLException e) {
             System.out.println("Error al insertar pastel: " + e.getMessage());
             e.printStackTrace();
@@ -161,6 +163,7 @@ public class Main {
         }
     }
 
+    // --- Main ---
     public static void main(String[] args) {
         realizarConexion();
 
@@ -170,7 +173,7 @@ public class Main {
 
         // actualizarPastel(1, "Tres Leches Premium", "Vainilla Extra", 30.00, 12);
 
-        // eliminarPastel(3);
+        //eliminarPastel(0);
 
         cerrarConexion();
     }
